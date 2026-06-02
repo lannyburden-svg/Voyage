@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#0a0e1a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Voyage"/>
+  
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <title>Voyage — Travel Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #0a0e1a;
+      --ink2: #1a2035;
+      --ink3: #2a3050;
+      --surface: #f5f2ec;
+      --surface2: #ede9e0;
+      --surface3: #e3ddd2;
+      --gold: #c9a84c;
+      --gold2: #e8c97a;
+      --cream: #faf7f2;
+      --text: #0a0e1a;
+      --text2: #4a5068;
+      --text3: #8a90a8;
+      --white: #ffffff;
+      --red: #c0392b;
+      --green: #27ae60;
+      --blue: #2980b9;
+
+      --cat-flight: #1a6b9a;
+      --cat-hotel: #7a5c2e;
+      --cat-car: #2e6b4a;
+      --cat-activity: #7a2e6b;
+      --cat-note: #4a4a6b;
+    }
+
+    html, body { height: 100%; background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+    #app { display: flex; flex-direction: column; height: 100%; max-width: 480px; margin: 0 auto; background: var(--cream); position: relative; }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--ink);
+      color: var(--white);
+      padding: 0 20px;
+      padding-top: max(env(safe-area-inset-top), 16px);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .header-inner { padding: 18px 0 0; }
+    .header-eyebrow { font-size: 10px; letter-spacing: 4px; color: var(--gold); text-transform: uppercase; font-weight: 500; margin-bottom: 4px; }
+    .header-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+    .header-trip { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 4px; margin-bottom: 16px; font-weight: 300; }
+    .header-trip strong { color: rgba(255,255,255,0.85); font-weight: 500; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .tab-btn {
+      flex: 1; padding: 10px 4px; background: transparent; border: none;
+      color: rgba(255,255,255,0.4); font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500; letter-spacing: 1.5px; cursor: pointer;
+      text-transform: uppercase; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+    }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ── SCROLL ── */
+    .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: max(env(safe-area-inset-bottom), 80px); }
+    .scroll::-webkit-scrollbar { width: 2px; }
+    .scroll::-webkit-scrollbar-thumb { background: var(--surface3); }
+
+    /* ── TRIP SELECTOR ── */
+    .trip-bar {
+      background: var(--ink2);
+      padding: 10px 20px;
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .trip-select {
+      flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px;
+      padding: 7px 12px; border-radius: 6px; cursor: pointer; outline: none;
+      -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23c9a84c' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
+    }
+    .trip-select option { background: var(--ink2); }
+    .new-trip-btn {
+      background: var(--gold); border: none; color: var(--ink); font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 6px;
+      cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── CONTENT PADDING ── */
+    .pad { padding: 20px; }
+
+    /* ── SECTION ── */
+    .section-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-icon { font-size: 16px; }
+    .add-item-btn {
+      background: var(--ink); color: var(--white); border: none; border-radius: 20px;
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+      padding: 6px 14px; cursor: pointer; letter-spacing: 0.5px;
+      -webkit-tap-highlight-color: transparent; transition: background 0.2s;
+    }
+    .add-item-btn:active { background: var(--ink3); }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--white); border-radius: 12px; margin-bottom: 10px;
+      overflow: hidden; box-shadow: 0 1px 8px rgba(10,14,26,0.06);
+      transition: box-shadow 0.2s;
+    }
+    .card-accent { width: 4px; flex-shrink: 0; }
+    .card-inner { display: flex; }
+    .card-body { flex: 1; padding: 14px 14px 14px 12px; min-width: 0; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .card-title { font-weight: 500; font-size: 15px; line-height: 1.3; flex: 1; min-width: 0; }
+    .card-conf { font-size: 11px; font-family: 'DM Sans', monospace; background: var(--surface2); color: var(--text2); padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; white-space: nowrap; cursor: pointer; transition: background 0.15s; }
+    .card-conf:active { background: var(--gold2); }
+    .card-meta { font-size: 12px; color: var(--text3); display: flex; flex-wrap: wrap; gap: 10px; }
+    .card-meta span { display: flex; align-items: center; gap: 4px; }
+    .card-note-text { font-size: 13px; color: var(--text2); margin-top: 8px; line-height: 1.5; font-weight: 300; border-top: 1px solid var(--surface2); padding-top: 8px; }
+    .card-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .card-edit-btn { font-size: 11px; color: var(--text3); background: transparent; border: 1px solid var(--surface3); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .card-del-btn { font-size: 11px; color: var(--red); background: transparent; border: 1px solid rgba(192,57,43,0.2); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .status-badge { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; }
+    .status-confirmed { background: rgba(39,174,96,0.12); color: var(--green); }
+    .status-pending { background: rgba(201,168,76,0.15); color: #a07820; }
+    .status-cancelled { background: rgba(192,57,43,0.1); color: var(--red); }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-text { font-size: 14px; line-height: 1.6; }
+
+    /* ── NO TRIP ── */
+    .no-trip { text-align: center; padding: 60px 30px; }
+    .no-trip-icon { font-size: 48px; margin-bottom: 16px; }
+    .no-trip-title { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 8px; }
+    .no-trip-sub { font-size: 14px; color: var(--text3); margin-bottom: 24px; line-height: 1.6; }
+    .no-trip-btn { background: var(--ink); color: var(--white); border: none; border-radius: 8px; padding: 14px 28px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+    /* ── OVERVIEW ── */
+    .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .ov-card {
+      background: var(--white); border-radius: 12px; padding: 16px;
+      box-shadow: 0 1px 8px rgba(10,14,26,0.06); cursor: pointer;
+      transition: transform 0.15s; -webkit-tap-highlight-color: transparent;
+    }
+    .ov-card:active { transform: scale(0.97); }
+    .ov-icon { font-size: 22px; margin-bottom: 8px; }
+    .ov-count { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; line-height: 1; }
+    .ov-label { font-size: 12px; color: var(--text3); margin-top: 3px; font-weight: 300; }
+    .timeline-section { margin-top: 8px; }
+    .tl-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+    .tl-date { font-size: 11px; color: var(--text3); width: 50px; flex-shrink: 0; padding-top: 2px; font-weight: 300; }
+    .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .tl-content { flex: 1; }
+    .tl-title { font-size: 14px; font-weight: 500; }
+    .tl-sub { font-size: 12px; color: var(--text3); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(10,14,26,0.7);
+      backdrop-filter: blur(4px); z-index: 100;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--cream); border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px; max-height: 92vh;
+      overflow-y: auto; padding: 0 0 max(env(safe-area-inset-bottom), 20px);
+      transform: translateY(40px); transition: transform 0.3s ease;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-handle { width: 40px; height: 4px; background: var(--surface3); border-radius: 2px; margin: 14px auto 0; }
+    .modal-head { padding: 16px 20px 0; }
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .modal-sub { font-size: 13px; color: var(--text3); }
+    .modal-body { padding: 20px; }
+    .form-field { margin-bottom: 16px; }
+    .form-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text3); font-weight: 500; display: block; margin-bottom: 6px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; background: var(--white); border: 1.5px solid var(--surface3);
+      color: var(--text); border-radius: 8px; padding: 11px 14px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px;
+      transition: border-color 0.15s; outline: none; -webkit-appearance: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
+    .form-textarea { resize: none; min-height: 80px; line-height: 1.5; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238a90a8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px; cursor: pointer; }
+    .form-select option { background: white; }
+    .modal-actions { display: flex; gap: 10px; padding: 0 20px; }
+    .btn-cancel { flex: 1; background: var(--surface2); border: none; color: var(--text2); border-radius: 8px; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .btn-save { flex: 2; background: var(--ink); border: none; color: var(--white); border-radius: 8px; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.2s; }
+    .btn-save:active { background: var(--ink3); }
+
+    /* Trip modal special */
+    .trip-modal-body { padding: 20px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: max(env(safe-area-inset-bottom), 20px) + 20px;
+      left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--ink); color: var(--white); padding: 10px 20px;
+      border-radius: 20px; font-size: 13px; font-weight: 500;
+      transition: transform 0.3s ease; z-index: 200; white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; bottom: max(env(safe-area-inset-bottom), 20px);
+      right: max(calc((100vw - 480px) / 2 + 20px), 20px);
+      width: 52px; height: 52px; background: var(--gold); border: none;
+      border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 50;
+      box-shadow: 0 4px 16px rgba(201,168,76,0.4);
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; transition: transform 0.2s;
+    }
+    .fab:active { transform: scale(0.92); }
+
+    /* divider */
+    .divider { height: 1px; background: var(--surface2); margin: 4px 0 16px; }
+
+    /* Copied flash */
+    .copied { animation: flash 0.5s ease; }
+    @keyframes flash { 0%,100%{background:var(--surface2)} 50%{background:var(--gold2)} }
+
+    /* ── SETTINGS ── */
+    .settings-section { background: var(--white); border-radius: 12px; margin-bottom: 16px; overflow: hidden; box-shadow: 0 1px 8px rgba(10,14,26,0.06); }
+    .settings-section-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); font-weight: 600; padding: 14px 16px 8px; }
+    .settings-row { display: flex; align-items: center; padding: 12px 16px; border-top: 1px solid var(--surface2); gap: 12px; }
+    .settings-row:first-of-type { border-top: none; }
+    .settings-row-icon { font-size: 20px; flex-shrink: 0; width: 32px; text-align: center; }
+    .settings-row-body { flex: 1; min-width: 0; }
+    .settings-row-label { font-size: 14px; font-weight: 500; }
+    .settings-row-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .settings-row-action { flex-shrink: 0; }
+    .api-key-input { width: 100%; background: var(--surface2); border: 1.5px solid var(--surface3); color: var(--text); border-radius: 8px; padding: 10px 12px; font-family: 'DM Sans', monospace; font-size: 13px; letter-spacing: 0.5px; outline: none; transition: border-color 0.15s; }
+    .api-key-input:focus { border-color: var(--gold); background: var(--white); }
+    .api-key-input::placeholder { color: var(--text3); letter-spacing: 0; font-family: 'DM Sans', sans-serif; }
+    .save-key-btn { background: var(--ink); border: none; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 10px 18px; border-radius: 7px; cursor: pointer; margin-top: 10px; width: 100%; -webkit-tap-highlight-color: transparent; transition: background 0.2s; }
+    .save-key-btn:active { background: var(--ink3); }
+    .key-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 20px; }
+    .key-status.set { background: rgba(39,174,96,0.1); color: var(--green); }
+    .key-status.unset { background: rgba(192,57,43,0.1); color: var(--red); }
+    .key-hint { font-size: 12px; color: var(--text3); line-height: 1.6; margin-top: 10px; padding: 10px 12px; background: var(--surface2); border-radius: 8px; }
+    .key-hint a { color: var(--gold); text-decoration: none; }
+    .key-hint code { background: var(--surface3); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+    .clear-key-btn { background: transparent; border: 1px solid rgba(192,57,43,0.25); color: var(--red); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-top: 8px; -webkit-tap-highlight-color: transparent; }
+
+    /* ── EMAIL IMPORT ── */
+    .import-btn {
+      background: rgba(201,168,76,0.12); border: 1.5px solid rgba(201,168,76,0.35);
+      color: var(--gold2); font-family: 'DM Sans', sans-serif; font-size: 13px;
+      font-weight: 500; padding: 7px 14px; border-radius: 6px; cursor: pointer;
+      white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: all 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .import-btn:active { background: rgba(201,168,76,0.2); }
+    .import-zone {
+      width: 100%; min-height: 140px; background: var(--white);
+      border: 2px dashed var(--surface3); border-radius: 10px;
+      padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+      color: var(--text); resize: none; outline: none; line-height: 1.5;
+      transition: border-color 0.2s;
+    }
+    .import-zone:focus { border-color: var(--gold); }
+    .import-zone::placeholder { color: var(--text3); }
+    .ai-extracting {
+      display: flex; align-items: center; gap: 10px; padding: 14px;
+      background: var(--ink); border-radius: 10px; color: var(--white);
+      font-size: 14px; margin-bottom: 12px;
+    }
+    .ai-spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(201,168,76,0.3);
+      border-top-color: var(--gold); border-radius: 50%;
+      animation: spin 0.7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .extracted-preview {
+      background: var(--white); border: 1.5px solid rgba(39,174,96,0.3);
+      border-radius: 10px; padding: 14px; margin-bottom: 14px;
+    }
+    .extracted-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .extracted-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--surface2); gap: 10px; }
+    .extracted-row:last-child { border-bottom: none; }
+    .extracted-key { color: var(--text3); flex-shrink: 0; }
+    .extracted-val { color: var(--text); font-weight: 500; text-align: right; }
+    .btn-import-save { flex: 2; background: var(--green); border: none; color: var(--white); border-radius: 8px; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .import-error { background: rgba(192,57,43,0.08); border: 1px solid rgba(192,57,43,0.2); border-radius: 8px; padding: 12px 14px; font-size: 13px; color: var(--red); margin-bottom: 12px; line-height: 1.5; }
+  </style>
+
+  <script>
+    // Inline manifest
+    const _manifest = {"name": "Voyage \u2014 Travel Tracker", "short_name": "Voyage", "description": "Track flights, hotels, car rentals, activities, and travel notes", "start_url": ".", "display": "standalone", "background_color": "#0a0e1a", "theme_color": "#0a0e1a", "orientation": "portrait"};
+    const _mBlob = new Blob([JSON.stringify(_manifest)], {type:'application/json'});
+    const _mUrl = URL.createObjectURL(_mBlob);
+    const _mLink = document.createElement('link');
+    _mLink.rel = 'manifest'; _mLink.href = _mUrl;
+    document.head.appendChild(_mLink);
+
+    // Inline service worker
+    const _swCode = `
+const CACHE = 'voyage-v1';
+self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('activate', e => { self.clients.claim(); });
+self.addEventListener('fetch', e => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+    `;
+    if ('serviceWorker' in navigator) {
+      const _swBlob = new Blob([_swCode], {type:'text/javascript'});
+      const _swUrl = URL.createObjectURL(_swBlob);
+      navigator.serviceWorker.register(_swUrl).catch(() => {});
+    }
+  </script>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-eyebrow">Voyage</div>
+      <div class="header-title">Travel Tracker</div>
+      <div class="header-trip" id="header-trip">Select or create a trip below</div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-btn" data-tab="flights" onclick="switchTab('flights')">Flights</button>
+      <button class="tab-btn" data-tab="hotels" onclick="switchTab('hotels')">Hotels</button>
+      <button class="tab-btn" data-tab="cars" onclick="switchTab('cars')">Cars</button>
+      <button class="tab-btn" data-tab="do" onclick="switchTab('do')">Do</button>
+      <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')">Notes</button>
+      <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')" id="settings-tab-btn">⚙️</button>
+    </div>
+  </div>
+
+  <div class="trip-bar">
+    <select class="trip-select" id="trip-select" onchange="selectTrip(this.value)">
+      <option value="">— Select a Trip —</option>
+    </select>
+    <button class="import-btn" onclick="openImportModal()" title="Import from email">✉️ Import</button>
+    <button class="new-trip-btn" onclick="openTripModal()">+ Trip</button>
+  </div>
+
+  <div class="scroll" id="scroll">
+    <div id="tab-overview"></div>
+    <div id="tab-flights" style="display:none"></div>
+    <div id="tab-hotels" style="display:none"></div>
+    <div id="tab-cars" style="display:none"></div>
+    <div id="tab-do" style="display:none"></div>
+    <div id="tab-notes" style="display:none"></div>
+    <div id="tab-settings" style="display:none"></div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openAddModal()" title="Add item">＋</button>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">Add Item</div>
+      <div class="modal-sub" id="modal-sub"></div>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  trips: [],
+  currentTripId: null,
+  tab: 'overview',
+  editingItem: null,
+  editingCategory: null,
+  modalMode: null, // 'trip' | 'item' | 'import'
+  importExtracted: null,
+};
+
+function load() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('voyage_v1') || '{}');
+    state.trips = saved.trips || [];
+    state.currentTripId = saved.currentTripId || null;
+  } catch { state.trips = []; }
+}
+
+function save() {
+  localStorage.setItem('voyage_v1', JSON.stringify({
+    trips: state.trips,
+    currentTripId: state.currentTripId
+  }));
+}
+
+function currentTrip() {
+  return state.trips.find(t => t.id === state.currentTripId) || null;
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ─── CATEGORIES ──────────────────────────────────────────────────────────────
+const CATS = {
+  flights:  { label: 'Flights',        icon: '✈️',  color: '#1a6b9a', tab: 'flights' },
+  hotels:   { label: 'Hotels',         icon: '🏨',  color: '#7a5c2e', tab: 'hotels' },
+  cars:     { label: 'Car Rentals',    icon: '🚗',  color: '#2e6b4a', tab: 'cars' },
+  activity: { label: 'Things To Do',  icon: '🗺️',  color: '#7a2e6b', tab: 'do' },
+  notes:    { label: 'Notes',          icon: '📝',  color: '#4a4a6b', tab: 'notes' },
+};
+
+const TAB_TO_CAT = { flights:'flights', hotels:'hotels', cars:'cars', do:'activity', notes:'notes' };
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  updateTripSelect();
+  updateHeaderTrip();
+  renderCurrentTab();
+}
+
+function updateTripSelect() {
+  const sel = document.getElementById('trip-select');
+  const cur = state.currentTripId;
+  sel.innerHTML = `<option value="">— Select a Trip —</option>` +
+    state.trips.map(t => `<option value="${t.id}" ${t.id===cur?'selected':''}>${t.name}</option>`).join('');
+}
+
+function updateHeaderTrip() {
+  const trip = currentTrip();
+  const el = document.getElementById('header-trip');
+  if (!trip) { el.innerHTML = `Select or create a trip below`; return; }
+  const dates = trip.startDate && trip.endDate
+    ? `<strong>${fmtDate(trip.startDate)}</strong> → <strong>${fmtDate(trip.endDate)}</strong>`
+    : trip.startDate ? `<strong>${fmtDate(trip.startDate)}</strong>` : '';
+  el.innerHTML = `<strong>${trip.destination || trip.name}</strong>${dates ? ' &nbsp;·&nbsp; '+dates : ''}`;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  try {
+    const dt = new Date(d + 'T12:00:00');
+    return dt.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+  } catch { return d; }
+}
+
+function renderCurrentTab() {
+  const tabs = ['overview','flights','hotels','cars','do','notes','settings'];
+  tabs.forEach(t => document.getElementById(`tab-${t}`).style.display = t === state.tab ? '' : 'none');
+  if (state.tab === 'overview') renderOverview();
+  else if (state.tab === 'settings') renderSettings();
+  else renderCategory(TAB_TO_CAT[state.tab]);
+
+  // Show/hide FAB
+  document.getElementById('fab').style.display = (state.tab === 'overview' || state.tab === 'settings' || !currentTrip()) ? 'none' : 'flex';
+
+  // Show key warning dot on settings tab if key not set
+  const btn = document.getElementById('settings-tab-btn');
+  if (btn) btn.textContent = getApiKey() ? '⚙️' : '⚙️🔴';
+}
+
+// ─── OVERVIEW ─────────────────────────────────────────────────────────────────
+function renderOverview() {
+  const trip = currentTrip();
+  const el = document.getElementById('tab-overview');
+
+  if (!trip) {
+    el.innerHTML = `<div class="no-trip">
+      <div class="no-trip-icon">🌍</div>
+      <div class="no-trip-title">No Trip Selected</div>
+      <div class="no-trip-sub">Create your first trip to start tracking flights, hotels, car rentals, activities, and notes.</div>
+      <button class="no-trip-btn" onclick="openTripModal()">Create a Trip</button>
+    </div>`;
+    return;
+  }
+
+  const items = trip.items || [];
+  const counts = { flights: 0, hotels: 0, cars: 0, activity: 0, notes: 0 };
+  items.forEach(i => { if (counts[i.category] !== undefined) counts[i.category]++; });
+
+  // Timeline: all dated items sorted
+  const dated = items.filter(i => i.date || i.startDate).map(i => ({
+    ...i, sortDate: i.date || i.startDate
+  })).sort((a,b) => a.sortDate.localeCompare(b.sortDate));
+
+  let html = `<div class="pad">`;
+
+  // Overview grid
+  html += `<div class="overview-grid">`;
+  Object.entries(CATS).forEach(([key, cat]) => {
+    const tabMap = { flights:'flights', hotels:'hotels', cars:'cars', activity:'do', notes:'notes' };
+    html += `<div class="ov-card" onclick="switchTab('${tabMap[key]}')">
+      <div class="ov-icon">${cat.icon}</div>
+      <div class="ov-count" style="color:${cat.color}">${counts[key]}</div>
+      <div class="ov-label">${cat.label}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Timeline
+  if (dated.length > 0) {
+    html += `<div class="section-head"><div class="section-title">📅 Timeline</div></div>`;
+    html += `<div class="timeline-section">`;
+    dated.forEach(item => {
+      const cat = CATS[item.category];
+      html += `<div class="tl-item">
+        <div class="tl-date">${fmtDate(item.sortDate)}</div>
+        <div class="tl-dot" style="background:${cat.color}"></div>
+        <div class="tl-content">
+          <div class="tl-title">${esc(item.title)}</div>
+          <div class="tl-sub">${cat.icon} ${cat.label}${item.confirmation ? ' · ' + esc(item.confirmation) : ''}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div class="empty"><div class="empty-icon">🗓️</div><div class="empty-text">Add items to see your trip timeline here.</div></div>`;
+  }
+
+  // Edit trip
+  html += `<div style="margin-top:16px;text-align:center">
+    <button onclick="openTripModal(true)" style="background:transparent;border:1px solid var(--surface3);color:var(--text3);border-radius:6px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">✏️ Edit Trip Details</button>
+    <button onclick="deleteTrip()" style="background:transparent;border:1px solid rgba(192,57,43,0.2);color:var(--red);border-radius:6px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-left:8px">🗑 Delete Trip</button>
+  </div>`;
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+// ─── CATEGORY LIST ───────────────────────────────────────────────────────────
+function renderCategory(cat) {
+  const tabId = { flights:'tab-flights', hotels:'tab-hotels', cars:'tab-cars', activity:'tab-do', notes:'tab-notes' }[cat];
+  const el = document.getElementById(tabId);
+  const trip = currentTrip();
+  const info = CATS[cat];
+
+  if (!trip) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">${info.icon}</div><div class="empty-text">Select a trip first.</div></div>`;
+    return;
+  }
+
+  const items = (trip.items || []).filter(i => i.category === cat);
+
+  let html = `<div class="pad">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon">${info.icon}</span> ${info.label}</div>
+      <button class="add-item-btn" onclick="openAddModal()">+ Add</button>
+    </div>`;
+
+  if (items.length === 0) {
+    html += `<div class="empty"><div class="empty-text">No ${info.label.toLowerCase()} added yet.<br/>Tap + Add to get started.</div></div>`;
+  } else {
+    items.forEach(item => {
+      html += renderCard(item, info.color);
+    });
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function renderCard(item, color) {
+  const statusCls = item.status === 'Confirmed' ? 'confirmed' : item.status === 'Cancelled' ? 'cancelled' : 'pending';
+  let meta = [];
+  if (item.date) meta.push(`📅 ${fmtDate(item.date)}`);
+  if (item.startDate && item.endDate) meta.push(`📅 ${fmtDate(item.startDate)} → ${fmtDate(item.endDate)}`);
+  else if (item.startDate) meta.push(`📅 ${fmtDate(item.startDate)}`);
+  if (item.time) meta.push(`🕐 ${item.time}`);
+  if (item.location) meta.push(`📍 ${esc(item.location)}`);
+  if (item.amount) meta.push(`💰 ${esc(item.amount)}`);
+  if (item.airline) meta.push(`✈️ ${esc(item.airline)}`);
+  if (item.flightNum) meta.push(`🔢 ${esc(item.flightNum)}`);
+
+  return `<div class="card" id="card-${item.id}">
+    <div class="card-inner">
+      <div class="card-accent" style="background:${color}"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <div class="card-title">${esc(item.title)}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+            ${item.status ? `<span class="status-badge status-${statusCls}">${item.status}</span>` : ''}
+            ${item.confirmation ? `<span class="card-conf" onclick="copyConf('${esc(item.confirmation)}',this)" title="Tap to copy">${esc(item.confirmation)}</span>` : ''}
+          </div>
+        </div>
+        ${meta.length ? `<div class="card-meta">${meta.map(m=>`<span>${m}</span>`).join('')}</div>` : ''}
+        ${item.notes ? `<div class="card-note-text">${esc(item.notes)}</div>` : ''}
+        <div class="card-actions">
+          <button class="card-edit-btn" onclick="editItem('${item.id}')">✏️ Edit</button>
+          <button class="card-del-btn" onclick="deleteItem('${item.id}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+function openTripModal(editing = false) {
+  const trip = editing ? currentTrip() : null;
+  state.modalMode = 'trip';
+  document.getElementById('modal-title').textContent = editing ? 'Edit Trip' : 'New Trip';
+  document.getElementById('modal-sub').textContent = editing ? 'Update your trip details' : 'Where are you headed?';
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-body">
+      <div class="form-field">
+        <label class="form-label">Trip Name *</label>
+        <input class="form-input" id="f-trip-name" placeholder="e.g. Newfoundland Road Trip" value="${trip?.name||''}"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Destination</label>
+        <input class="form-input" id="f-trip-dest" placeholder="e.g. St. John's, NL" value="${trip?.destination||''}"/>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Start Date</label>
+          <input class="form-input" id="f-trip-start" type="date" value="${trip?.startDate||''}"/>
+        </div>
+        <div class="form-field">
+          <label class="form-label">End Date</label>
+          <input class="form-input" id="f-trip-end" type="date" value="${trip?.endDate||''}"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTrip(${editing})">${editing?'Save Changes':'Create Trip'}</button>
+    </div>
+    <div style="height:10px"></div>`;
+  openModal();
+}
+
+function openAddModal() {
+  if (!currentTrip()) { showToast('Create a trip first'); return; }
+  const cat = TAB_TO_CAT[state.tab] || 'flights';
+  state.modalMode = 'item';
+  state.editingItem = null;
+  state.editingCategory = cat;
+  renderItemForm(cat, null);
+  openModal();
+}
+
+function editItem(id) {
+  const trip = currentTrip();
+  const item = (trip?.items || []).find(i => i.id === id);
+  if (!item) return;
+  state.modalMode = 'item';
+  state.editingItem = item;
+  state.editingCategory = item.category;
+  renderItemForm(item.category, item);
+  openModal();
+}
+
+function renderItemForm(cat, item) {
+  const info = CATS[cat];
+  document.getElementById('modal-title').textContent = item ? `Edit ${info.label.slice(0,-1)||info.label}` : `Add ${info.label.slice(0,-1)||info.label}`;
+  document.getElementById('modal-sub').textContent = info.icon + ' ' + info.label;
+
+  let fields = '';
+
+  if (cat === 'flights') {
+    fields = `
+      <div class="form-field"><label class="form-label">Route / Title *</label><input class="form-input" id="f-title" placeholder="e.g. YYT → YYZ" value="${esc(item?.title||'')}"/></div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Airline</label><input class="form-input" id="f-airline" placeholder="Air Canada" value="${esc(item?.airline||'')}"/></div>
+        <div class="form-field"><label class="form-label">Flight #</label><input class="form-input" id="f-flightNum" placeholder="AC 123" value="${esc(item?.flightNum||'')}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Date</label><input class="form-input" id="f-date" type="date" value="${item?.date||''}"/></div>
+        <div class="form-field"><label class="form-label">Time</label><input class="form-input" id="f-time" type="time" value="${item?.time||''}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Confirmation #</label><input class="form-input" id="f-confirmation" placeholder="ABC123" value="${esc(item?.confirmation||'')}"/></div>
+        <div class="form-field"><label class="form-label">Amount</label><input class="form-input" id="f-amount" placeholder="$0.00" value="${esc(item?.amount||'')}"/></div>
+      </div>`;
+  } else if (cat === 'hotels') {
+    fields = `
+      <div class="form-field"><label class="form-label">Hotel Name *</label><input class="form-input" id="f-title" placeholder="e.g. Sheraton Hotel" value="${esc(item?.title||'')}"/></div>
+      <div class="form-field"><label class="form-label">Location</label><input class="form-input" id="f-location" placeholder="Address or city" value="${esc(item?.location||'')}"/></div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Check-in</label><input class="form-input" id="f-startDate" type="date" value="${item?.startDate||''}"/></div>
+        <div class="form-field"><label class="form-label">Check-out</label><input class="form-input" id="f-endDate" type="date" value="${item?.endDate||''}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Confirmation #</label><input class="form-input" id="f-confirmation" placeholder="ABC123" value="${esc(item?.confirmation||'')}"/></div>
+        <div class="form-field"><label class="form-label">Amount</label><input class="form-input" id="f-amount" placeholder="$0.00" value="${esc(item?.amount||'')}"/></div>
+      </div>`;
+  } else if (cat === 'cars') {
+    fields = `
+      <div class="form-field"><label class="form-label">Rental Company / Car *</label><input class="form-input" id="f-title" placeholder="e.g. Enterprise — SUV" value="${esc(item?.title||'')}"/></div>
+      <div class="form-field"><label class="form-label">Pickup Location</label><input class="form-input" id="f-location" placeholder="Airport, address..." value="${esc(item?.location||'')}"/></div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Pickup Date</label><input class="form-input" id="f-startDate" type="date" value="${item?.startDate||''}"/></div>
+        <div class="form-field"><label class="form-label">Return Date</label><input class="form-input" id="f-endDate" type="date" value="${item?.endDate||''}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Confirmation #</label><input class="form-input" id="f-confirmation" placeholder="ABC123" value="${esc(item?.confirmation||'')}"/></div>
+        <div class="form-field"><label class="form-label">Amount</label><input class="form-input" id="f-amount" placeholder="$0.00" value="${esc(item?.amount||'')}"/></div>
+      </div>`;
+  } else if (cat === 'activity') {
+    fields = `
+      <div class="form-field"><label class="form-label">Activity / Attraction *</label><input class="form-input" id="f-title" placeholder="e.g. Cape St. Mary's tour" value="${esc(item?.title||'')}"/></div>
+      <div class="form-field"><label class="form-label">Location</label><input class="form-input" id="f-location" placeholder="Where is it?" value="${esc(item?.location||'')}"/></div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Date</label><input class="form-input" id="f-date" type="date" value="${item?.date||''}"/></div>
+        <div class="form-field"><label class="form-label">Time</label><input class="form-input" id="f-time" type="time" value="${item?.time||''}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Booking Ref</label><input class="form-input" id="f-confirmation" placeholder="Optional" value="${esc(item?.confirmation||'')}"/></div>
+        <div class="form-field"><label class="form-label">Amount</label><input class="form-input" id="f-amount" placeholder="$0.00" value="${esc(item?.amount||'')}"/></div>
+      </div>`;
+  } else { // notes
+    fields = `
+      <div class="form-field"><label class="form-label">Title *</label><input class="form-input" id="f-title" placeholder="Note title" value="${esc(item?.title||'')}"/></div>`;
+  }
+
+  // Status + notes for all
+  const statuses = ['Confirmed','Pending','Cancelled'];
+  fields += `
+    <div class="form-field"><label class="form-label">Status</label>
+      <select class="form-select" id="f-status">
+        <option value="">— None —</option>
+        ${statuses.map(s=>`<option value="${s}" ${item?.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-field"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-notes" placeholder="Any extra details...">${esc(item?.notes||'')}</textarea></div>`;
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-body">${fields}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveItem()">${item ? 'Save Changes' : 'Add'}</button>
+    </div>
+    <div style="height:10px"></div>`;
+}
+
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => {
+    const first = document.querySelector('#modal-content .form-input');
+    if (first) first.focus();
+  }, 350);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  state.editingItem = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+// ─── SAVE TRIP ───────────────────────────────────────────────────────────────
+function saveTrip(editing) {
+  const name = document.getElementById('f-trip-name')?.value?.trim();
+  if (!name) { showToast('Trip name is required'); return; }
+  const dest = document.getElementById('f-trip-dest')?.value?.trim();
+  const start = document.getElementById('f-trip-start')?.value;
+  const end = document.getElementById('f-trip-end')?.value;
+
+  if (editing) {
+    const trip = currentTrip();
+    if (!trip) return;
+    trip.name = name; trip.destination = dest; trip.startDate = start; trip.endDate = end;
+  } else {
+    const trip = { id: uid(), name, destination: dest, startDate: start, endDate: end, items: [] };
+    state.trips.push(trip);
+    state.currentTripId = trip.id;
+  }
+  save(); closeModal(); render();
+  showToast(editing ? 'Trip updated' : 'Trip created!');
+}
+
+// ─── SAVE ITEM ───────────────────────────────────────────────────────────────
+function saveItem() {
+  const title = document.getElementById('f-title')?.value?.trim();
+  if (!title) { showToast('Title is required'); return; }
+
+  const cat = state.editingCategory;
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+
+  const item = {
+    id: state.editingItem?.id || uid(),
+    category: cat,
+    title,
+    confirmation: get('f-confirmation'),
+    status: get('f-status'),
+    notes: get('f-notes'),
+    amount: get('f-amount'),
+    location: get('f-location'),
+    date: get('f-date'),
+    time: get('f-time'),
+    startDate: get('f-startDate'),
+    endDate: get('f-endDate'),
+    airline: get('f-airline'),
+    flightNum: get('f-flightNum'),
+  };
+
+  const trip = currentTrip();
+  if (!trip) return;
+  trip.items = trip.items || [];
+
+  if (state.editingItem) {
+    const idx = trip.items.findIndex(i => i.id === item.id);
+    if (idx >= 0) trip.items[idx] = item;
+  } else {
+    trip.items.push(item);
+  }
+
+  save(); closeModal(); render();
+  showToast(state.editingItem ? 'Updated!' : 'Added!');
+}
+
+// ─── DELETE ───────────────────────────────────────────────────────────────────
+function deleteItem(id) {
+  if (!confirm('Delete this item?')) return;
+  const trip = currentTrip();
+  if (!trip) return;
+  trip.items = (trip.items || []).filter(i => i.id !== id);
+  save(); render();
+  showToast('Deleted');
+}
+
+function deleteTrip() {
+  const trip = currentTrip();
+  if (!trip) return;
+  if (!confirm(`Delete "${trip.name}" and all its items?`)) return;
+  state.trips = state.trips.filter(t => t.id !== trip.id);
+  state.currentTripId = state.trips.length > 0 ? state.trips[state.trips.length-1].id : null;
+  save(); render();
+  showToast('Trip deleted');
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────────────────
+function selectTrip(id) {
+  state.currentTripId = id || null;
+  save(); render();
+}
+
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('scroll').scrollTop = 0;
+  renderCurrentTab();
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copyConf(text, el) {
+  navigator.clipboard.writeText(text).then(() => {
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 500);
+    showToast('Copied!');
+  }).catch(() => showToast(text));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── API KEY ──────────────────────────────────────────────────────────────────
+function getApiKey() { return localStorage.getItem('voyage_gemini_key') || ''; }
+function setApiKey(k) { localStorage.setItem('voyage_gemini_key', k.trim()); }
+function clearApiKey() { localStorage.removeItem('voyage_gemini_key'); }
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-field')?.value?.trim();
+  if (!val) { showToast('Please enter a key'); return; }
+  if (val.length < 20) { showToast('Key looks too short — check and try again'); return; }
+  setApiKey(val);
+  renderSettings();
+  showToast('✓ API key saved!');
+}
+
+function clearApiKeySetting() {
+  if (!confirm('Remove saved API key?')) return;
+  clearApiKey();
+  renderSettings();
+  showToast('Key removed');
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+function renderSettings() {
+  const el = document.getElementById('tab-settings');
+  const key = getApiKey();
+  const masked = key ? key.slice(0, 12) + '••••••••••••' + key.slice(-4) : '';
+
+  el.innerHTML = `<div class="pad">
+    <div class="section-head" style="margin-bottom:20px">
+      <div class="section-title">⚙️ Settings</div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">AI Email Import</div>
+      <div style="padding:14px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-size:14px;font-weight:500">Google Gemini API Key</div>
+          <span class="key-status ${key ? 'set' : 'unset'}">${key ? '✓ Key saved' : '✗ Not set'}</span>
+        </div>
+        ${key ? `
+          <div style="font-size:13px;color:var(--text3);font-family:monospace;background:var(--surface2);padding:8px 12px;border-radius:6px;margin-bottom:10px;letter-spacing:0.5px">${masked}</div>
+          <div style="display:flex;gap:8px">
+            <button class="clear-key-btn" onclick="clearApiKeySetting()">🗑 Remove Key</button>
+            <button style="background:transparent;border:1px solid var(--surface3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer" onclick="document.getElementById('replace-key-wrap').style.display='block'">Replace</button>
+          </div>
+          <div id="replace-key-wrap" style="display:none;margin-top:12px">
+            <input class="api-key-input" id="api-key-field" type="password" placeholder="AIza..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+            <button class="save-key-btn" onclick="saveApiKey()">Save New Key</button>
+          </div>
+        ` : `
+          <input class="api-key-input" id="api-key-field" type="password" placeholder="AIza..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+          <button class="save-key-btn" onclick="saveApiKey()">Save API Key</button>
+          <div class="key-hint">
+            Get a <strong>free</strong> key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a><br/>
+            → Sign in with Google → Create API Key → Copy it<br/>
+            No credit card. No billing. Completely free.<br/><br/>
+            The key is saved <strong>only on this device</strong> and never sent anywhere except directly to Google when you import an email.
+          </div>
+        `}
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">About</div>
+      <div class="settings-row">
+        <div class="settings-row-icon">🌍</div>
+        <div class="settings-row-body">
+          <div class="settings-row-label">Voyage Travel Tracker</div>
+          <div class="settings-row-sub">All data stored locally on this device</div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-icon">🔒</div>
+        <div class="settings-row-body">
+          <div class="settings-row-label">Privacy</div>
+          <div class="settings-row-sub">No account, no server, no tracking</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+
+function openImportModal() {
+  if (!currentTrip()) { showToast('Select or create a trip first'); return; }
+  state.modalMode = 'import';
+  state.importExtracted = null;
+  document.getElementById('modal-title').textContent = 'Import from Email';
+  document.getElementById('modal-sub').textContent = 'Paste a confirmation email — AI will extract the details';
+  renderImportStep1();
+  openModal();
+}
+
+function renderImportStep1() {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-body">
+      <div class="form-field">
+        <label class="form-label">Paste Email Content</label>
+        <textarea class="import-zone" id="email-paste" placeholder="Paste your confirmation email here — flight, hotel, car rental, activity booking...&#10;&#10;Just copy the full email text and paste it in. AI will find the confirmation number, dates, amounts, and everything else."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="extractEmail()" id="extract-btn">✨ Extract Details</button>
+    </div>
+    <div style="height:10px"></div>`;
+  setTimeout(() => document.getElementById('email-paste')?.focus(), 350);
+}
+
+async function extractEmail() {
+  const text = document.getElementById('email-paste')?.value?.trim();
+  if (!text || text.length < 20) { showToast('Please paste an email first'); return; }
+
+  // Check for API key first
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-body">
+        <div class="import-error" style="font-size:14px;line-height:1.7">
+          <strong>API key required</strong><br/>
+          To use email import, you need a free Google Gemini API key.<br/><br/>
+          Tap <strong>Go to Settings</strong> below, then follow the instructions to get and save your key. Takes about 2 minutes.
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="closeModal();switchTab('settings')">Go to Settings →</button>
+      </div>
+      <div style="height:10px"></div>`;
+    return;
+  }
+
+  // Show loading state
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-body">
+      <div class="ai-extracting">
+        <div class="ai-spinner"></div>
+        <div>Reading your email and extracting details…</div>
+      </div>
+      <div style="font-size:13px;color:var(--text3);text-align:center;padding:10px 0">This usually takes a few seconds</div>
+    </div>`;
+
+  try {
+    const prompt = `You are a travel booking parser. Extract reservation details from this confirmation email and return ONLY a JSON object with NO markdown, NO backticks, NO explanation.
+
+Return this exact structure (use null for any field not found):
+{
+  "category": "flights" | "hotels" | "cars" | "activity" | "notes",
+  "title": "descriptive title (e.g. 'YYT → YYZ' for flight, hotel name, car company)",
+  "confirmation": "confirmation/booking/reservation number",
+  "status": "Confirmed" | "Pending" | "Cancelled",
+  "airline": "airline name (flights only, else null)",
+  "flightNum": "flight number (flights only, else null)",
+  "date": "YYYY-MM-DD (for single-date items like flights/activities)",
+  "time": "HH:MM (24h format, departure or check-in time)",
+  "startDate": "YYYY-MM-DD (for hotels/cars check-in or pickup)",
+  "endDate": "YYYY-MM-DD (for hotels/cars check-out or return)",
+  "location": "address, city, or venue name",
+  "amount": "total amount with currency symbol",
+  "notes": "any other relevant info: seat numbers, room type, special requests, etc (max 100 chars)"
+}
+
+EMAIL:
+${text.slice(0, 4000)}`;
+
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+      })
+    });
+
+    if (res.status === 400 || res.status === 403) throw new Error('Invalid API key — check your key in Settings.');
+    if (res.status === 429) throw new Error('Rate limit hit — wait a moment and try again.');
+    if (!res.ok) throw new Error(`API error ${res.status} — try again.`);
+
+    const data = await res.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // Robustly extract JSON - handle markdown fences, extra text before/after
+    let clean = raw.replace(/```json|```/gi, '').trim();
+    // Find the first { and last } to extract just the JSON object
+    const jsonStart = clean.indexOf('{');
+    const jsonEnd = clean.lastIndexOf('}');
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error('No JSON found in response — try again.');
+    clean = clean.slice(jsonStart, jsonEnd + 1);
+    const extracted = JSON.parse(clean);
+
+    state.importExtracted = extracted;
+    renderImportPreview(extracted);
+
+  } catch (err) {
+    const isKeyError = err.message?.includes('Invalid API key') || err.message?.includes('401');
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-body">
+        <div class="import-error">⚠️ ${esc(err.message || 'Could not extract details. Try again.')}</div>
+        ${isKeyError ? `<div style="margin-top:8px"><button class="save-key-btn" style="background:var(--ink)" onclick="closeModal();switchTab('settings')">Check API Key in Settings →</button></div>` : ''}
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="renderImportStep1()">← Try Again</button>
+        <button class="btn-save" onclick="closeModal();openAddModal()">Add Manually</button>
+      </div>
+      <div style="height:10px"></div>`;
+  }
+}
+
+function renderImportPreview(data) {
+  const catInfo = { flights:'✈️ Flight', hotels:'🏨 Hotel', cars:'🚗 Car Rental', activity:'🗺️ Activity', notes:'📝 Note' };
+  const rows = [
+    ['Type', catInfo[data.category] || data.category],
+    ['Title', data.title],
+    ['Confirmation #', data.confirmation],
+    ['Status', data.status],
+    data.airline ? ['Airline', data.airline] : null,
+    data.flightNum ? ['Flight #', data.flightNum] : null,
+    data.date ? ['Date', data.date] : null,
+    data.time ? ['Time', data.time] : null,
+    data.startDate ? ['Check-in / Pickup', data.startDate] : null,
+    data.endDate ? ['Check-out / Return', data.endDate] : null,
+    data.location ? ['Location', data.location] : null,
+    data.amount ? ['Amount', data.amount] : null,
+    data.notes ? ['Notes', data.notes] : null,
+  ].filter(Boolean).filter(r => r[1] && r[1] !== 'null');
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-body">
+      <div class="extracted-preview">
+        <div class="extracted-label">✓ Details Extracted</div>
+        ${rows.map(([k,v]) => `<div class="extracted-row"><span class="extracted-key">${k}</span><span class="extracted-val">${esc(String(v))}</span></div>`).join('')}
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px">You can edit any details after saving.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="renderImportStep1()">← Re-paste</button>
+      <button class="btn-import-save" onclick="saveImported()">Add to Trip</button>
+    </div>
+    <div style="height:10px"></div>`;
+}
+
+function saveImported() {
+  const data = state.importExtracted;
+  if (!data) return;
+  const trip = currentTrip();
+  if (!trip) return;
+
+  const item = {
+    id: uid(),
+    category: data.category || 'notes',
+    title: data.title || 'Imported Item',
+    confirmation: data.confirmation || '',
+    status: data.status || 'Confirmed',
+    airline: data.airline || '',
+    flightNum: data.flightNum || '',
+    date: data.date || '',
+    time: data.time || '',
+    startDate: data.startDate || '',
+    endDate: data.endDate || '',
+    location: data.location || '',
+    amount: data.amount || '',
+    notes: data.notes || '',
+  };
+
+  // Clean nulls
+  Object.keys(item).forEach(k => { if (item[k] === 'null' || item[k] === null) item[k] = ''; });
+
+  trip.items = trip.items || [];
+  trip.items.push(item);
+  save();
+
+  // Switch to the right tab
+  const tabMap = { flights:'flights', hotels:'hotels', cars:'cars', activity:'do', notes:'notes' };
+  state.tab = tabMap[item.category] || 'overview';
+
+  closeModal();
+  render();
+  showToast('✓ Added from email!');
+}
+
+
+
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>
