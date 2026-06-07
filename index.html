@@ -925,10 +925,21 @@ function saveApiKey() {
 }
 
 function clearApiKeySetting() {
-  if (!confirm('Remove saved API key?')) return;
+  if (!confirm('This will permanently remove your Gemini API key from this device. Make sure you have it saved elsewhere before continuing.')) return;
   clearApiKey();
   renderSettings();
   showToast('Key removed');
+}
+
+function toggleShowKey() {
+  const wrap = document.getElementById('show-key-wrap');
+  if (!wrap) return;
+  if (wrap.style.display === 'none') {
+    wrap.style.display = 'block';
+    wrap.textContent = getApiKey();
+  } else {
+    wrap.style.display = 'none';
+  }
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
@@ -983,10 +994,12 @@ function renderSettings() {
   if (key) {
     apiKeyHtml = `
       <div style="font-size:13px;color:var(--text3);font-family:monospace;background:var(--surface2);padding:8px 12px;border-radius:6px;margin-bottom:10px;letter-spacing:0.5px">${masked}</div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="clear-key-btn" onclick="clearApiKeySetting()">🗑 Remove Key</button>
         <button style="background:transparent;border:1px solid var(--surface3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer" onclick="document.getElementById('replace-key-wrap').style.display='block'">Replace</button>
+        <button style="background:transparent;border:1px solid var(--surface3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer" onclick="toggleShowKey()">👁 Show</button>
       </div>
+      <div id="show-key-wrap" style="display:none;margin-top:10px;font-size:12px;font-family:monospace;background:var(--surface2);padding:8px 12px;border-radius:6px;word-break:break-all;color:var(--text2)" id="show-key-text"></div>
       <div id="replace-key-wrap" style="display:none;margin-top:12px">
         <input class="api-key-input" id="api-key-field" type="password" placeholder="AIza..." autocomplete="off" autocorrect="off" spellcheck="false"/>
         <button class="save-key-btn" onclick="saveApiKey()">Save New Key</button>
@@ -1025,6 +1038,15 @@ function renderSettings() {
             <span class="key-status ${key ? 'set' : 'unset'}">${key ? '✓ Key saved' : '✗ Not set'}</span>
           </div>
           ${apiKeyHtml}
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Local Backup</div>
+        <div style="padding:14px 16px">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">Download your trip data as a JSON file, or restore from a previously saved file. This works independently of Google Drive.</div>
+          <button class="gdrive-btn connect" style="background:var(--ink);margin-bottom:8px" onclick="exportData()">⬇️ Download Backup File</button>
+          <button class="restore-btn" onclick="importData()">📂 Restore from File</button>
         </div>
       </div>
 
@@ -1083,10 +1105,21 @@ function saveApiKey() {
 }
 
 function clearApiKeySetting() {
-  if (!confirm('Remove saved API key?')) return;
+  if (!confirm('This will permanently remove your Gemini API key from this device. Make sure you have it saved elsewhere before continuing.')) return;
   clearApiKey();
   renderSettings();
   showToast('Key removed');
+}
+
+function toggleShowKey() {
+  const wrap = document.getElementById('show-key-wrap');
+  if (!wrap) return;
+  if (wrap.style.display === 'none') {
+    wrap.style.display = 'block';
+    wrap.textContent = getApiKey();
+  } else {
+    wrap.style.display = 'none';
+  }
 }
 
 // ─── GOOGLE DRIVE BACKUP ──────────────────────────────────────────────────────
@@ -1293,6 +1326,48 @@ function updateBackupStatusUI() {
     el.className = 'backup-status disconnected';
     el.textContent = '\u2601\ufe0f Not connected';
   }
+}
+
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
+
+function exportData() {
+  const data = { trips: state.trips, currentTripId: state.currentTripId, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'voyage-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Backup downloaded!');
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.trips || !Array.isArray(data.trips)) throw new Error('Invalid backup file');
+        if (!confirm('This will replace all current trip data. Continue?')) return;
+        state.trips = data.trips;
+        state.currentTripId = data.currentTripId || null;
+        save();
+        render();
+        showToast('✓ Data restored from file!');
+      } catch(err) {
+        showToast('Import failed — ' + (err.message || 'invalid file'));
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 // ─── EMAIL IMPORT ─────────────────────────────────────────────────────────────
