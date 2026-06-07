@@ -1424,7 +1424,7 @@ async function extractEmail() {
   try {
     const prompt = 'You are a travel booking parser. Extract reservation details from this confirmation email and return ONLY a JSON object with NO markdown, NO backticks, NO explanation.\n\nReturn this exact structure (use null for any field not found):\n{\n  "category": "flights" | "hotels" | "cars" | "activity" | "notes",\n  "title": "descriptive title",\n  "confirmation": "confirmation/booking number",\n  "status": "Confirmed" | "Pending" | "Cancelled",\n  "airline": "airline name or null",\n  "flightNum": "flight number or null",\n  "date": "YYYY-MM-DD or null",\n  "time": "HH:MM or null",\n  "startDate": "YYYY-MM-DD or null",\n  "endDate": "YYYY-MM-DD or null",\n  "location": "address or city or null",\n  "amount": "total with currency or null",\n  "notes": "extra info max 100 chars or null"\n}\n\nEMAIL:\n' + text.slice(0, 4000);
 
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
